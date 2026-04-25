@@ -1,0 +1,34 @@
+[tool.poetry]
+name = "reporter"
+version = "1.0.1"
+description = "CLI для отчётов по релизам и статистике GitLab"
+authors = ["German Rabtsevich"]
+
+[tool.poetry.dependencies]
+python = ">=3.11,<3.14"
+python-gitlab = "^6.2.0"
+Markdown = "^3.8.2"
+typer = "^0.16.0"
+pyfiglet = "^1.0.2"
+mdformat = "^0.7.19"
+mdformat-tables = "^1.0.0"
+timeago = "^1.0.16"
+pytz = "^2024.2"
+python-dotenv = "^1.0.0"
+pydantic = "^2.0"
+pandas = "^2.0"
+python-dateutil = "^2.8"
+rich = "^13.0"
+xlsxwriter = "^3.1"
+
+[tool.poetry.group.dev.dependencies]
+pytest = "^8.4.1"
+mypy = "^1.17.0"
+ruff = "^0.11.9"
+
+[build-system]
+requires = ["poetry-core>=1.0.0"]
+build-backend = "poetry.core.masonry.api"
+
+[tool.poetry.scripts]
+reporter = 'reporter.app:start'

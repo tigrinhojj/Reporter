@@ -1,0 +1,60 @@
+stages:
+    - test
+    - deploy-wheel
+    - release
+
+test_install:
+    image: $DOCKER_PROXY_REGISTRY/python:${PYTHON_VERSION}-slim
+    stage: test
+    parallel:
+        matrix:
+            - PYTHON_VERSION: ["3.11", "3.12", "3.13"]
+    before_script:
+      - python3 -m pip install --upgrade pip
+    script:
+      - python3 -V
+      - python3 -m pip install .
+      - reporter --help >/dev/null
+    tags:
+      - docker-ci
+
+deploy_wheel:
+    image: $DOCKER_PROXY_REGISTRY/python:3.13-slim
+    stage: deploy-wheel
+    rules:
+      - if: '$CI_COMMIT_BRANCH == "master"'
+    before_script:
+      - python3 -m pip install --upgrade pip
+      - python3 -m pip install poetry
+    script:
+      - poetry build
+      - poetry config repositories.publish "${PYPI_REPOSITORY_URL}"
+      - poetry publish -r publish --no-interaction --username="${PYPI_USERNAME}" --password="${PYPI_PASSWORD}"
+      - echo "TAG=$(poetry version -s)" > variables.env
+    artifacts:
+        when: on_success
+        expire_in: 4 weeks
+        reports:
+            dotenv: variables.env
+        paths:
+          - dist/*.whl
+    tags:
+      - docker-ci
+
+release_job:
+    stage: release
+    image: registry.gitlab.com/gitlab-org/release-cli:latest
+    rules:
+      - if: '$CI_COMMIT_BRANCH == "master"'
+    needs:
+    - job: deploy_wheel
+      artifacts: true
+    script:
+      - echo 'running release_job $TAG'
+    release:
+       name: 'Release $TAG'
+       description: 'Описание изменений в CHANGELOG.md'
+       tag_name: '$TAG'
+       ref: '$CI_COMMIT_SHA'
+    tags:
+        - docker-ci
